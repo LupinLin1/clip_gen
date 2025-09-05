@@ -314,6 +314,25 @@ class MCPServer:
         self.tool_registry.register_from_module(module)
         self.logger.info(f"从模块注册工具: {module.__name__}")
     
+    def register_tool_class(self, tool_class) -> None:
+        """注册工具类"""
+        self.tool_registry.register_tool_class(tool_class)
+        self.logger.info(f"注册工具类: {tool_class.__class__.__name__}")
+    
+    async def initialize_services(self) -> None:
+        """初始化服务"""
+        try:
+            # 初始化 Kling 视频工具
+            if hasattr(self.config, 'kling') and self.config.kling:
+                from .tools.kling_video import KlingVideoTools
+                kling_tools = KlingVideoTools(self.config)
+                self.register_tool_class(kling_tools)
+                self.logger.info("Kling 视频工具已初始化")
+        
+        except Exception as e:
+            self.logger.warning(f"初始化服务失败: {e}")
+            # 不阻止服务器启动，只记录警告
+    
     @property
     def is_running(self) -> bool:
         """服务器是否正在运行"""
@@ -330,6 +349,7 @@ async def create_server(config: Optional[Config] = None) -> MCPServer:
     """创建MCP服务器实例"""
     try:
         server = MCPServer(config)
+        await server.initialize_services()
         return server
     except Exception as e:
         logger = get_logger("server_factory")

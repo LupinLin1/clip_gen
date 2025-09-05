@@ -68,6 +68,14 @@ class FileProcessingError(MCPError):
     """文件处理错误"""
     pass
 
+class FileOperationError(MCPError):
+    """文件操作错误"""
+    pass
+
+class ServiceError(MCPError):
+    """服务错误"""
+    pass
+
 class APIError(MCPError):
     """API调用错误基类"""
     
@@ -130,6 +138,8 @@ ERROR_CODE_MAPPING = {
     "RATE_LIMIT_ERROR": RateLimitError,
     "TIMEOUT_ERROR": TimeoutError,
     "FILE_PROCESSING_ERROR": FileProcessingError,
+    "FILE_OPERATION_ERROR": FileOperationError,
+    "SERVICE_ERROR": ServiceError,
     "API_ERROR": APIError,
     "GEMINI_API_ERROR": GeminiAPIError,
     "KLING_API_ERROR": KlingAPIError,

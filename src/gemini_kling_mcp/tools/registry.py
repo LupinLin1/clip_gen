@@ -276,6 +276,22 @@ class ToolRegistry:
                     tool_info['parameters']
                 )
     
+    def register_tool_class(self, tool_class) -> None:
+        """注册工具类实例"""
+        if hasattr(tool_class, 'get_tools') and callable(tool_class.get_tools):
+            tools = tool_class.get_tools()
+            for tool in tools:
+                # 将MCP工具格式转换为ToolInfo并注册
+                async def tool_handler(*args, **kwargs):
+                    return await tool_class.handle_tool_call(tool.name, kwargs)
+                
+                self.register_tool(
+                    tool_handler,
+                    tool.name,
+                    tool.description,
+                    tool.inputSchema
+                )
+    
     async def cleanup(self) -> None:
         """清理资源"""
         self.logger.info("清理工具注册器")

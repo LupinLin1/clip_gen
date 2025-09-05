@@ -59,11 +59,11 @@ class KlingConfig:
     max_retries: int = 3
     
     @classmethod
-    def from_env(cls) -> "KlingConfig":
+    def from_env(cls) -> Optional["KlingConfig"]:
         """从环境变量加载配置"""
         api_key = os.getenv("KLING_API_KEY")
         if not api_key:
-            raise ValueError("KLING_API_KEY环境变量必须设置")
+            return None  # Kling 是可选服务
         
         return cls(
             api_key=api_key,
@@ -106,7 +106,7 @@ class Config:
     """主配置类"""
     server: ServerConfig
     gemini: GeminiConfig
-    kling: KlingConfig
+    kling: Optional[KlingConfig]
     file: FileConfig
     
     @classmethod
@@ -143,12 +143,7 @@ class Config:
                 timeout=int(os.getenv("GEMINI_TIMEOUT", config_data.get("gemini", {}).get("timeout", 30))),
                 max_retries=int(os.getenv("GEMINI_MAX_RETRIES", config_data.get("gemini", {}).get("max_retries", 3)))
             ),
-            kling=KlingConfig(
-                api_key=os.getenv("KLING_API_KEY", config_data.get("kling", {}).get("api_key", "")),
-                base_url=os.getenv("KLING_BASE_URL", config_data.get("kling", {}).get("base_url", "https://api.klingai.com")),
-                timeout=int(os.getenv("KLING_TIMEOUT", config_data.get("kling", {}).get("timeout", 300))),
-                max_retries=int(os.getenv("KLING_MAX_RETRIES", config_data.get("kling", {}).get("max_retries", 3)))
-            ),
+            kling=cls._load_kling_config_from_file(config_data),
             file=FileConfig(
                 temp_dir=os.getenv("TEMP_DIR", config_data.get("file", {}).get("temp_dir", "/tmp/gemini_kling_mcp")),
                 max_file_size=int(os.getenv("MAX_FILE_SIZE", config_data.get("file", {}).get("max_file_size", 100 * 1024 * 1024))),
@@ -161,15 +156,28 @@ class Config:
             )
         )
     
+    @classmethod
+    def _load_kling_config_from_file(cls, config_data: Dict[str, Any]) -> Optional[KlingConfig]:
+        """从配置文件加载 Kling 配置"""
+        api_key = os.getenv("KLING_API_KEY", config_data.get("kling", {}).get("api_key", ""))
+        if not api_key:
+            return None
+        
+        return KlingConfig(
+            api_key=api_key,
+            base_url=os.getenv("KLING_BASE_URL", config_data.get("kling", {}).get("base_url", "https://api.klingai.com")),
+            timeout=int(os.getenv("KLING_TIMEOUT", config_data.get("kling", {}).get("timeout", 300))),
+            max_retries=int(os.getenv("KLING_MAX_RETRIES", config_data.get("kling", {}).get("max_retries", 3)))
+        )
+    
     def validate(self) -> None:
         """验证配置"""
         errors = []
         
-        # 验证API密钥
+        # 验证API密钥（Gemini必需，Kling可选）
         if not self.gemini.api_key:
             errors.append("Gemini API密钥未设置")
-        if not self.kling.api_key:
-            errors.append("Kling API密钥未设置")
+        # Kling API密钥是可选的，只在使用时验证
         
         # 验证端口范围
         if self.server.port < 0 or self.server.port > 65535:
@@ -178,7 +186,7 @@ class Config:
         # 验证超时时间
         if self.gemini.timeout <= 0:
             errors.append(f"Gemini超时时间无效: {self.gemini.timeout}")
-        if self.kling.timeout <= 0:
+        if self.kling and self.kling.timeout <= 0:
             errors.append(f"Kling超时时间无效: {self.kling.timeout}")
         
         # 验证文件大小限制
@@ -211,11 +219,11 @@ class Config:
                 "max_retries": self.gemini.max_retries
             },
             "kling": {
-                "api_key": "***" if self.kling.api_key else "",  # 隐藏敏感信息
-                "base_url": self.kling.base_url,
-                "timeout": self.kling.timeout,
-                "max_retries": self.kling.max_retries
-            },
+                "api_key": "***" if self.kling and self.kling.api_key else "",  # 隐藏敏感信息
+                "base_url": self.kling.base_url if self.kling else "",
+                "timeout": self.kling.timeout if self.kling else 0,
+                "max_retries": self.kling.max_retries if self.kling else 0
+            } if self.kling else None,
             "file": {
                 "temp_dir": self.file.temp_dir,
                 "max_file_size": self.file.max_file_size,
