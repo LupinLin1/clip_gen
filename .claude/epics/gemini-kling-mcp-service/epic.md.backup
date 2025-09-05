@@ -4,7 +4,7 @@ status: backlog
 created: 2025-09-05T10:46:03Z
 progress: 0%
 prd: .claude/prds/gemini-kling-mcp-service.md
-github: https://github.com/LupinLin1/clip_gen/issues/1
+github: [Will be updated when synced to GitHub]
 ---
 
 # Epic: gemini-kling-mcp-service
@@ -129,14 +129,14 @@ github: https://github.com/LupinLin1/clip_gen/issues/1
 4. 测试和优化（2周）
 
 ## Tasks Created
-- [ ] #2 - MCP服务器基础架构和配置管理 (parallel: true)
-- [ ] #3 - 文件处理和输出管理系统 (parallel: true)
-- [ ] #4 - Gemini文本服务API封装和测试 (parallel: true, depends: 2)
-- [ ] #5 - Gemini图像服务API封装和测试 (parallel: true, depends: 2)
-- [ ] #6 - Kling视频服务API封装和测试 (parallel: true, depends: 2)
-- [ ] #7 - 组合工作流和高级功能 (parallel: false, depends: 4,5,6)
-- [ ] #8 - 完整的测试套件开发 (parallel: true, depends: 2,4,5,6)
-- [ ] #9 - 文档和使用示例编写 (parallel: false, depends: 7,8)
+- [ ] 001.md - MCP服务器基础架构和配置管理 (parallel: true)
+- [ ] 002.md - 文件处理和输出管理系统 (parallel: true)
+- [ ] 003.md - Gemini文本服务API封装和测试 (parallel: true, depends: 001)
+- [ ] 004.md - Gemini图像服务API封装和测试 (parallel: true, depends: 001)
+- [ ] 005.md - Kling视频服务API封装和测试 (parallel: true, depends: 001)
+- [ ] 006.md - 组合工作流和高级功能 (parallel: false, depends: 003,004,005)
+- [ ] 007.md - 完整的测试套件开发 (parallel: true, depends: 001,003,004,005)
+- [ ] 008.md - 文档和使用示例编写 (parallel: false, depends: 006,007)
 
 Total tasks: 8
 Parallel tasks: 6
