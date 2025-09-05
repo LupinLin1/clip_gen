@@ -16,7 +16,7 @@ from aiohttp import ClientSession, ClientTimeout, ClientError
 from ...config import GeminiConfig
 from ...logger import get_logger
 from ...exceptions import NetworkError, ValidationError
-from .models import GeminiApiResponse, GeminiError, GeminiModel
+from .models import GeminiApiResponse, GeminiError, GeminiModel, ImageModel
 
 class GeminiHTTPError(NetworkError):
     """Gemini HTTP 错误"""
@@ -40,7 +40,11 @@ class GeminiClient:
         self.endpoints = {
             "generate": "/v1beta/models/{model}:generateContent",
             "chat": "/v1beta/models/{model}:generateContent",
-            "analyze": "/v1beta/models/{model}:generateContent"
+            "analyze": "/v1beta/models/{model}:generateContent",
+            # 图像API端点
+            "image_generate": "/v1beta/models/{model}:generateImage",
+            "image_edit": "/v1beta/models/{model}:editImage",
+            "image_analyze": "/v1beta/models/{model}:generateContent"
         }
     
     async def __aenter__(self):
@@ -78,9 +82,12 @@ class GeminiClient:
             await self.session.close()
             self.logger.debug("已关闭 HTTP 会话")
     
-    def _get_endpoint_url(self, endpoint_key: str, model: Union[str, GeminiModel]) -> str:
+    def _get_endpoint_url(self, endpoint_key: str, model: Union[str, GeminiModel, ImageModel]) -> str:
         """获取端点URL"""
-        model_name = model.value if isinstance(model, GeminiModel) else model
+        if isinstance(model, (GeminiModel, ImageModel)):
+            model_name = model.value
+        else:
+            model_name = model
         endpoint = self.endpoints[endpoint_key].format(model=model_name)
         return urljoin(self.base_url, endpoint)
     
@@ -304,3 +311,83 @@ class GeminiClient:
         except Exception as e:
             self.logger.error(f"提取安全评级失败: {e}", response_data=response)
             return None
+    
+    # 图像相关方法
+    async def generate_image(
+        self, 
+        model: Union[str, ImageModel],
+        request_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """生成图像"""
+        url = self._get_endpoint_url("image_generate", model)
+        return await self._make_request("POST", url, json_data=request_data)
+    
+    async def edit_image(
+        self,
+        model: Union[str, ImageModel],
+        request_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """编辑图像"""
+        url = self._get_endpoint_url("image_edit", model)
+        return await self._make_request("POST", url, json_data=request_data)
+    
+    async def analyze_image(
+        self,
+        model: Union[str, GeminiModel],
+        request_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """分析图像（使用multimodal生成端点）"""
+        url = self._get_endpoint_url("image_analyze", model)
+        return await self._make_request("POST", url, json_data=request_data)
+    
+    def extract_image_data(self, response: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """从响应中提取图像数据"""
+        try:
+            images = []
+            
+            # 检查不同的响应格式
+            if "images" in response:
+                # 直接图像列表
+                for img_data in response["images"]:
+                    if "data" in img_data:
+                        images.append(img_data)
+            
+            elif "candidates" in response and response["candidates"]:
+                # Gemini格式响应
+                candidate = response["candidates"][0]
+                if "content" in candidate and "parts" in candidate["content"]:
+                    for part in candidate["content"]["parts"]:
+                        if "inlineData" in part:
+                            images.append(part["inlineData"])
+            
+            # 兼容其他格式
+            if not images and "data" in response:
+                images.append(response)
+            
+            return images
+            
+        except Exception as e:
+            self.logger.error(f"提取图像数据失败: {e}", response_data=response)
+            return []
+    
+    def extract_image_analysis(self, response: Dict[str, Any]) -> str:
+        """从响应中提取图像分析结果"""
+        try:
+            # 优先使用text提取方法
+            analysis = self.extract_generated_text(response)
+            if analysis:
+                return analysis
+            
+            # 检查其他格式
+            if "analysis" in response:
+                return response["analysis"]
+            
+            if "description" in response:
+                return response["description"]
+            
+            self.logger.warning("无法从响应中提取图像分析", response_keys=list(response.keys()))
+            return ""
+            
+        except Exception as e:
+            self.logger.error(f"提取图像分析失败: {e}", response_data=response)
+            return ""

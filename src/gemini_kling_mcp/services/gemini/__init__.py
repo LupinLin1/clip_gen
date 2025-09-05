@@ -6,6 +6,7 @@ Google Gemini AI 服务模块
 
 from .client import GeminiClient
 from .text_service import GeminiTextService
+from .image_service import GeminiImageService
 from .models import (
     TextGenerationRequest,
     TextGenerationResponse,
@@ -15,7 +16,20 @@ from .models import (
     TextAnalysisResponse,
     GeminiMessage,
     MessageRole,
-    GeminiModel
+    GeminiModel,
+    ImageModel,
+    ImageFormat,
+    ImageResolution,
+    ImageEditMode,
+    ImageGenerationRequest,
+    ImageGenerationResponse,
+    ImageEditRequest,
+    ImageEditResponse,
+    ImageAnalysisRequest,
+    ImageAnalysisResponse,
+    ImageBatchRequest,
+    ImageBatchResponse,
+    ImageData
 )
 
 # 主要服务类
@@ -24,6 +38,7 @@ GeminiService = GeminiTextService
 __all__ = [
     "GeminiClient",
     "GeminiTextService", 
+    "GeminiImageService",
     "GeminiService",
     "TextGenerationRequest",
     "TextGenerationResponse", 
@@ -33,5 +48,18 @@ __all__ = [
     "TextAnalysisResponse",
     "GeminiMessage",
     "MessageRole",
-    "GeminiModel"
+    "GeminiModel",
+    "ImageModel",
+    "ImageFormat",
+    "ImageResolution",
+    "ImageEditMode",
+    "ImageGenerationRequest",
+    "ImageGenerationResponse",
+    "ImageEditRequest",
+    "ImageEditResponse",
+    "ImageAnalysisRequest",
+    "ImageAnalysisResponse",
+    "ImageBatchRequest",
+    "ImageBatchResponse",
+    "ImageData"
 ]
