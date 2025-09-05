@@ -254,61 +254,48 @@ class GeminiTextService:
             )
     
     def _build_generation_request(self, request: TextGenerationRequest) -> Dict[str, Any]:
-        """构建文本生成请求"""
-        generation_config = {
-            "maxOutputTokens": request.max_tokens,
+        """构建文本生成请求（gptproto.com OpenAI格式）"""
+        api_request = {
+            "model": request.model.value,
+            "messages": [
+                {"role": "user", "content": request.prompt}
+            ],
+            "max_tokens": request.max_tokens,
             "temperature": request.temperature,
-            "topP": request.top_p,
+            "top_p": request.top_p,
         }
-        
-        if request.top_k is not None:
-            generation_config["topK"] = request.top_k
         
         if request.stop_sequences:
-            generation_config["stopSequences"] = request.stop_sequences
-        
-        api_request = {
-            "contents": [
-                {
-                    "parts": [{"text": request.prompt}]
-                }
-            ],
-            "generationConfig": generation_config,
-            "safetySettings": request.safety_settings or DEFAULT_SAFETY_SETTINGS
-        }
+            api_request["stop"] = request.stop_sequences
         
         return api_request
     
     def _build_chat_request(self, request: ChatCompletionRequest) -> Dict[str, Any]:
-        """构建对话请求"""
-        generation_config = {
-            "maxOutputTokens": request.max_tokens,
-            "temperature": request.temperature,
-            "topP": request.top_p,
-        }
-        
-        if request.top_k is not None:
-            generation_config["topK"] = request.top_k
-        
-        if request.stop_sequences:
-            generation_config["stopSequences"] = request.stop_sequences
-        
+        """构建对话请求（gptproto.com OpenAI格式）"""
         # 转换消息格式
-        contents = []
-        for message in request.messages:
-            contents.append(message.to_dict())
-        
-        api_request = {
-            "contents": contents,
-            "generationConfig": generation_config,
-            "safetySettings": request.safety_settings or DEFAULT_SAFETY_SETTINGS
-        }
+        messages = []
         
         # 添加系统指令
         if request.system_instruction:
-            api_request["systemInstruction"] = {
-                "parts": [{"text": request.system_instruction}]
-            }
+            messages.append({"role": "system", "content": request.system_instruction})
+        
+        # 添加对话历史
+        for message in request.messages:
+            messages.append({
+                "role": message.role.value if hasattr(message.role, 'value') else str(message.role),
+                "content": message.content
+            })
+        
+        api_request = {
+            "model": request.model.value,
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "top_p": request.top_p,
+        }
+        
+        if request.stop_sequences:
+            api_request["stop"] = request.stop_sequences
         
         return api_request
     
@@ -342,20 +329,14 @@ class GeminiTextService:
         return f"{base_prompt}\n\n文本内容：\n{request.text}"
     
     def _build_analysis_request(self, prompt: str, request: TextAnalysisRequest) -> Dict[str, Any]:
-        """构建分析请求"""
-        generation_config = {
-            "maxOutputTokens": request.max_tokens,
-            "temperature": request.temperature,
-        }
-        
+        """构建分析请求（gptproto.com OpenAI格式）"""
         api_request = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt}]
-                }
+            "model": request.model.value,
+            "messages": [
+                {"role": "user", "content": prompt}
             ],
-            "generationConfig": generation_config,
-            "safetySettings": DEFAULT_SAFETY_SETTINGS
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
         }
         
         return api_request
@@ -372,9 +353,13 @@ class GeminiTextService:
         usage = client.extract_usage_info(response_data)
         safety_ratings = client.extract_safety_ratings(response_data)
         
-        # 提取完成原因
+        # 提取完成原因（支持OpenAI和Gemini格式）
         finish_reason = None
-        if "candidates" in response_data and response_data["candidates"]:
+        if "choices" in response_data and response_data["choices"]:
+            # OpenAI 格式
+            finish_reason = response_data["choices"][0].get("finish_reason", "stop")
+        elif "candidates" in response_data and response_data["candidates"]:
+            # Gemini 原生格式
             finish_reason = response_data["candidates"][0].get("finishReason", "STOP")
         
         return TextGenerationResponse(
@@ -397,9 +382,13 @@ class GeminiTextService:
         usage = client.extract_usage_info(response_data)
         safety_ratings = client.extract_safety_ratings(response_data)
         
-        # 提取完成原因
+        # 提取完成原因（支持OpenAI和Gemini格式）
         finish_reason = None
-        if "candidates" in response_data and response_data["candidates"]:
+        if "choices" in response_data and response_data["choices"]:
+            # OpenAI 格式
+            finish_reason = response_data["choices"][0].get("finish_reason", "stop")
+        elif "candidates" in response_data and response_data["candidates"]:
+            # Gemini 原生格式
             finish_reason = response_data["candidates"][0].get("finishReason", "STOP")
         
         # 创建响应消息

@@ -23,7 +23,7 @@ def gemini_config():
     api_key = os.getenv("GEMINI_API_KEY", "test-api-key")
     return GeminiConfig(
         api_key=api_key,
-        base_url="https://generativelanguage.googleapis.com",
+        base_url="https://gptproto.com",
         timeout=30,
         max_retries=2
     )
@@ -63,7 +63,7 @@ class TestGeminiServiceIntegration:
         assert response.text is not None
         assert len(response.text) > 0
         assert response.model == GeminiModel.GEMINI_15_FLASH.value
-        assert response.finish_reason in ["STOP", "MAX_TOKENS", "SAFETY"]
+        assert response.finish_reason in ["stop", "length", "content_filter"]
         
         # 验证使用信息
         if response.usage:

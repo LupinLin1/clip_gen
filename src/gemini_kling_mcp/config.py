@@ -32,7 +32,7 @@ class ServerConfig:
 class GeminiConfig:
     """Gemini API配置"""
     api_key: str
-    base_url: str = "https://generativelanguage.googleapis.com"
+    base_url: str = "https://gptproto.com"
     timeout: int = 30
     max_retries: int = 3
     
@@ -45,7 +45,7 @@ class GeminiConfig:
         
         return cls(
             api_key=api_key,
-            base_url=os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com"),
+            base_url=os.getenv("GEMINI_BASE_URL", "https://gptproto.com"),
             timeout=int(os.getenv("GEMINI_TIMEOUT", "30")),
             max_retries=int(os.getenv("GEMINI_MAX_RETRIES", "3"))
         )
@@ -139,7 +139,7 @@ class Config:
             ),
             gemini=GeminiConfig(
                 api_key=os.getenv("GEMINI_API_KEY", config_data.get("gemini", {}).get("api_key", "")),
-                base_url=os.getenv("GEMINI_BASE_URL", config_data.get("gemini", {}).get("base_url", "https://generativelanguage.googleapis.com")),
+                base_url=os.getenv("GEMINI_BASE_URL", config_data.get("gemini", {}).get("base_url", "https://gptproto.com")),
                 timeout=int(os.getenv("GEMINI_TIMEOUT", config_data.get("gemini", {}).get("timeout", 30))),
                 max_retries=int(os.getenv("GEMINI_MAX_RETRIES", config_data.get("gemini", {}).get("max_retries", 3)))
             ),

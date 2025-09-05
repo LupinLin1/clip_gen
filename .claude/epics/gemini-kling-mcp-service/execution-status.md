@@ -8,19 +8,19 @@ branch: epic/gemini-kling-mcp-service
 ## Active Agents
 - None currently running
 
-## Ready Issues (3)
-- Issue #4 - Gemini文本服务 (依赖 #2 已完成)
-- Issue #5 - Gemini图像服务 (依赖 #2 已完成)
-- Issue #6 - Kling视频服务 (依赖 #2 已完成)
+## Ready Issues (2)
+- Issue #7 - 组合工作流和高级功能 (依赖 #4,#5,#6 已完成)
+- Issue #8 - 完整的测试套件开发 (依赖 #2,#4,#5,#6 已完成)
 
-## Blocked Issues (3)
-- Issue #7 - 组合工作流 (等待 #4,#5,#6)
-- Issue #8 - 测试套件 (等待 #4,#5,#6)
-- Issue #9 - 文档 (等待 #7,#8)
+## Blocked Issues (1)
+- Issue #9 - 文档和使用示例编写 (等待 #7,#8)
 
-## Completed (2)
+## Completed (5)
 - Issue #2 - MCP服务器基础架构和配置管理 ✅
 - Issue #3 - 文件处理和输出管理系统 ✅
+- Issue #4 - Gemini文本服务API封装和测试 ✅
+- Issue #5 - Gemini图像服务API封装和测试 ✅
+- Issue #6 - Kling视频服务API封装和测试 ✅
 
 ## Next Steps
 1. Monitor Agent-1 and Agent-2 progress

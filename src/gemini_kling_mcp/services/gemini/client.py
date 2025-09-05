@@ -36,15 +36,15 @@ class GeminiClient:
         self.base_url = config.base_url.rstrip('/')
         self.session: Optional[ClientSession] = None
         
-        # API 端点
+        # API 端点（gptproto.com 格式）
         self.endpoints = {
-            "generate": "/v1beta/models/{model}:generateContent",
-            "chat": "/v1beta/models/{model}:generateContent",
-            "analyze": "/v1beta/models/{model}:generateContent",
+            "generate": "/v1/chat/completions",
+            "chat": "/v1/chat/completions", 
+            "analyze": "/v1/chat/completions",
             # 图像API端点
-            "image_generate": "/v1beta/models/{model}:generateImage",
-            "image_edit": "/v1beta/models/{model}:editImage",
-            "image_analyze": "/v1beta/models/{model}:generateContent"
+            "image_generate": "/v1/images/generations",
+            "image_edit": "/v1/images/edits",
+            "image_analyze": "/v1/chat/completions"
         }
     
     async def __aenter__(self):
@@ -83,12 +83,8 @@ class GeminiClient:
             self.logger.debug("已关闭 HTTP 会话")
     
     def _get_endpoint_url(self, endpoint_key: str, model: Union[str, GeminiModel, ImageModel]) -> str:
-        """获取端点URL"""
-        if isinstance(model, (GeminiModel, ImageModel)):
-            model_name = model.value
-        else:
-            model_name = model
-        endpoint = self.endpoints[endpoint_key].format(model=model_name)
+        """获取端点URL（gptproto.com 格式，模型在请求体中指定）"""
+        endpoint = self.endpoints[endpoint_key]
         return urljoin(self.base_url, endpoint)
     
     async def _make_request(
@@ -266,8 +262,17 @@ class GeminiClient:
             raise ValidationError(f"响应格式错误: {e}", details={"response": response})
     
     def extract_generated_text(self, response: Dict[str, Any]) -> str:
-        """从响应中提取生成的文本"""
+        """从响应中提取生成的文本（支持OpenAI和Gemini格式）"""
         try:
+            # 优先检查 OpenAI 格式 (gptproto.com)
+            if "choices" in response and response["choices"]:
+                choice = response["choices"][0]
+                if "message" in choice and "content" in choice["message"]:
+                    return choice["message"]["content"]
+                elif "text" in choice:  # completion 格式
+                    return choice["text"]
+            
+            # 检查 Gemini 原生格式
             if "candidates" in response and response["candidates"]:
                 candidate = response["candidates"][0]
                 if "content" in candidate and "parts" in candidate["content"]:
@@ -287,8 +292,18 @@ class GeminiClient:
             return ""
     
     def extract_usage_info(self, response: Dict[str, Any]) -> Optional[Dict[str, int]]:
-        """从响应中提取使用信息"""
+        """从响应中提取使用信息（支持OpenAI和Gemini格式）"""
         try:
+            # 优先检查 OpenAI 格式 (gptproto.com)
+            if "usage" in response:
+                usage_data = response["usage"]
+                return {
+                    "prompt_tokens": usage_data.get("prompt_tokens", 0),
+                    "completion_tokens": usage_data.get("completion_tokens", 0), 
+                    "total_tokens": usage_data.get("total_tokens", 0)
+                }
+            
+            # 检查 Gemini 原生格式
             if "usageMetadata" in response:
                 usage_data = response["usageMetadata"]
                 return {

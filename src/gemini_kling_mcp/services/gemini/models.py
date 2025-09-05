@@ -20,6 +20,15 @@ class GeminiModel(str, Enum):
     def get_default(cls) -> "GeminiModel":
         """获取默认模型"""
         return cls.GEMINI_15_FLASH
+    
+    @classmethod
+    def from_string(cls, model_name: str) -> "GeminiModel":
+        """从字符串创建模型枚举"""
+        for model in cls:
+            if model.value == model_name:
+                return model
+        # 默认返回FLASH模型
+        return cls.GEMINI_15_FLASH
 
 class MessageRole(str, Enum):
     """消息角色"""

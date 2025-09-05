@@ -112,6 +112,28 @@ class ToolExecutionError(MCPError):
         """获取工具名称"""
         return self.details.get("tool_name", "")
 
+
+class WorkflowError(ToolExecutionError):
+    """工作流错误基类"""
+    
+    def __init__(self, message: str, workflow_id: Optional[str] = None,
+                 step_id: Optional[str] = None, **kwargs):
+        super().__init__(message, tool_name="workflow", **kwargs)
+        if workflow_id:
+            self.details["workflow_id"] = workflow_id
+        if step_id:
+            self.details["step_id"] = step_id
+    
+    @property
+    def workflow_id(self) -> Optional[str]:
+        """获取工作流ID"""
+        return self.details.get("workflow_id")
+    
+    @property
+    def step_id(self) -> Optional[str]:
+        """获取步骤ID"""
+        return self.details.get("step_id")
+
 class ResourceNotFoundError(MCPError):
     """资源未找到错误"""
     pass
