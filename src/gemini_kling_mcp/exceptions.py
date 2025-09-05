@@ -98,6 +98,11 @@ class ToolExecutionError(MCPError):
     def __init__(self, message: str, tool_name: str, **kwargs):
         super().__init__(message, **kwargs)
         self.details["tool_name"] = tool_name
+    
+    @property
+    def tool_name(self) -> str:
+        """获取工具名称"""
+        return self.details.get("tool_name", "")
 
 class ResourceNotFoundError(MCPError):
     """资源未找到错误"""
